@@ -1,0 +1,215 @@
+* EWOW -- Emacs Way of Operating Windows
+** Features
+
++ allows Emacs-like commands and keybinds (almost) everywhere in
+  Windows
+
+  - keyboard macros
+
+  - prefix digit-argument
+    - ex. C-3 C-n -> go 3 lines down
+
+  - Emacs-style region selection (i.e. set-mark-command)
+
+  - ... etc
+
+** Usage
+
+Install AutoHotKey_L, and run "ewow.ahk" then emacs commands are
+available. You can quit EWOW from tasktray icon.
+
+** Configuration
+*** Abstract
+
+EWOW is a set of AutoHotKey scripts :
+
+- fundamental.ahk :: provides a bunch of functions and variables, that
+     are used to implement emacs-like commands and keybinds
+
+- commands.ahk :: provides basic emacs commands implementation
+
+- init.ahk :: *PUT YOUR SETTINGS HERE*.
+
+- keybinds.ahk :: provides the default keybinds
+
+"ewow.ahk" just loads them in sequence. You can configure EWOW by
+writing AHK script in "init.ahk", so that "ewow.ahk" will load it.
+Some recomended configurations are provided and commented-out in
+"init.ahk", and you can uncomment to try them.
+
+*** How To Write AHK Script ?
+
+An AHK script basically consists of two parts :
+
+- auto-exec section
+- hotkey definitions
+
+they must be in the order. That is, you CANNOT write auto-exec section
+after hotkey definitions.
+
+**** auto-exec section
+
+In auto-exec section, you can define define/call functions and set
+variables, like usual programming languages. Calling functions and
+setting variables are as easy as :
+
+: foo()      ; function call
+: bar = baz  ; set variable value
+
+If you need to define functions to configure EWOW, please read AHK
+manuals.
+
+You may also import other EWOW packages in auto-execution section :
+
+: #Include evil.ahk
+
+**** hotkey definitions
+
+Hotkey definitions are similar to keybinds in emacs. To rebind =C-f=
+key to =forward_char= command, you just need to add following to your
+"init.ahk".
+
+: ^f:: forward_char()
+
+The letter =^= here indicates that =f= is modified by =Ctrl=
+key. Respectively =+= indicates =Shift= and =!= indicates
+=Alt=. Default Keybinds are defined in "keybinds.ahk".
+
+You may also define conditional keybinds with =#If= directive :
+
+: #If !ignored_frame() && !cx
+: ^f:: forward_char()
+: #If !ignored_frame() && cx
+: ^f:: find_file()
+
+The example above binds =C-f= to =forward_char= command, when =C-x= is
+not prefixed and the cursor is not in =ignored_frames= which is
+described later. If we are not in =ignored_frames= but =C-x= is
+prefixed, then =C-f= is bind to =find_file= command instead. Otherwise
+(when we are in "ignored_frames"), =C-f= is not bound. That is,
+=Ctrl-f= is sent to Windows normally.
+
+*** Functions and Variables provided in fundamental.ahk
+
+Following functions and variables are provided in
+"fundamental.ahk". You may call or set them in "init.ahk" to do some
+configurations.
+
+- configurable variables
+
+  + ignored_frames :: a list of window-classes in which EWOW should be
+                      disabled. for example, we usually do not want
+                      get EWOW enabled in Emacs window.
+
+- read-only variables
+
+  + cx :: true when =C-x= is prefixed.
+  + mark :: true when the mark is active.
+
+- functions
+
+  + ignored_frame() :: return if we are in =ignored_frames=
+
+** Writing Extensions
+
+If you are familiar with AHK, it is easy to write your own commands or
+packages. Because commands are just AHK functions, and a package is
+basically a set of commands and variables.
+
+Though, there are some differences to be cared. PLEASE READ
+description below, before start writing your own extensions.
+
+*** Functions and Variables Provided for Developers
+
+- functions
+
+  + send(str) :: a wrapper function of =Send= operation. PLEASE DO USE
+                 THIS instead of normal =Send= operation, so that sent
+                 keys are recorded in keyboard macros.
+
+  + add_hook(var, func) :: like =add-hook= in Emacs. available hooks
+       are described later. =var= must be a name of hook variable, and
+       =func= must be a name of a 0-ary function.
+
+  + remove_hook(var, func) :: inverse of =add_hook=.
+
+  + run_hooks(var) :: run hooks added to the hook variable =var=.
+
+  + alloc_tt() :: allocate an UID for =tooltip= and return it. when
+                  you use =tooltip= operation, PLEASE DO USE the ID
+                  provided by this function as =WhichToolTip=
+                  argument. there is no =free_tt()= function, so
+                  PLEASE DO REUSE the provided ID.
+
+  + read_char() :: steal a key event from keyboard and return it,
+                   without sending it to Windows nor invoking
+                   commands.
+
+  + set_mark() :: activate mark.
+
+  + reset_mark() :: deactivate mark.
+
+- read-only variables
+
+  + last_command :: the last key sequence sent to Windows.
+
+  + arg :: prefixed digit argument is stored as an integer.
+
+- hooks
+
+  + pre_command_hook :: hook which MUST BE CALLED manually at the
+       beginning of command.
+
+  + post_command_hook :: hook which MUST BE CALLED manually at the end
+       of command.
+
+  + after_change_hook :: hook which MUST BE CALLED manually just after
+       changes.
+
+  + before_send_hook :: hook which automatically runs before sending
+       keys to Windows. you may assume that the variable
+       =last_command= is set to the key sequence being sent, in the
+       hook.
+
+  + after_send_hook :: hook which automatically runs after sending
+       keys to Windows.
+
+  + after_display_transition_hook :: hook which automatically runs
+       when the active window is switched.
+
+*** Things You MUST Do
+
++ use =send()= function instead of =Send=.
+
++ use =alloc_tt()= function when you use =ToolTip=.
+
++ call =pre_command_hook=, =post_command_hook= and =after_change_hook=
+  from your commands manually. Your command may looks like :
+
+  : my_command()
+  : {
+  :     run_hooks("pre_command_hook")
+  :     do_something()
+  :     run_hooks("post_command_hook")
+  : }
+
++ use local variables as well as you can, to save namespace.
+
+*** Thigs You CAN Do
+
++ hook some functions with =add_hook=
+
+  : add_hook("pre_command_hook", "my_pkg_pre_command_function")
+
++ run some hooks with =run_hoks=
+
++ use =read_char()= function to steal a key input
+
++ read =last_command= and =arg= value
+
+** Known Limitations, Bugs
+
++ some commands are not recorded in keyboard macro
+  - =some commands= are -- commands that do not send keys to Windows
+
++ registers are not available for now
