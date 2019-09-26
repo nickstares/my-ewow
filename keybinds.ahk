@@ -468,7 +468,7 @@ right:: next_window()           ; next-buffer
 ^-:: undo_only()
 ^=:: self_insert_command()
 ^q:: self_insert_command()
-^w:: kill_region()
+^w:: self_insert_command()
 ^e:: move_end_of_line()
 ^r:: self_insert_command()           ; isearch-backward
 ^t:: self_insert_command()
@@ -480,7 +480,7 @@ right:: next_window()           ; next-buffer
 ^[:: self_insert_command()
 ^]:: self_insert_command()
 ^a:: move_beginning_of_line()
-^s:: search_forward()           ; isearch-forward
+^s:: self_insert_command()           ; isearch-forward
 ^d:: delete_char()
 ^f:: forward_char()
 ^g:: keyboard_quit()
@@ -674,6 +674,40 @@ xbutton2 up:: mouse_event_command()
 +xbutton1 up:: mouse_event_command()
 +xbutton2 up:: mouse_event_command()
 
+;; WIN BINDINGS TO REPLACE OSX MUSCLE MEMORY FOR CMD
+#l::
+Send ^l
+return
+ 
+#s::save_buffer()
+#f::search_forward()
+
+#If, alt_pressed
+LWin up:: alttab_end()
+#If,
+#tab:: alttab_next()
+
+#t::
+Send ^t
+return
+
+#w::
+Send ^w
+return
+
+#c::
+Send ^c
+return
+
+#v::
+Send ^v
+return
+
+#z::
+Send ^z
+return
+
+
 ;; ------------
 ;; special keys
 ;; ------------
@@ -699,7 +733,7 @@ right:: forward_char()
 insert:: overwrite_mode()
 
 scrolllock:: self_send_command()
-capslock:: self_send_command()
+capslock:: Ctrl
 numlock:: self_send_command()
 appskey:: self_send_command()
 printscreen:: self_send_command()
