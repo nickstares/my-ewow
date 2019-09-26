@@ -1,7 +1,6 @@
-# my-ewow
-my emacs-way-of-operating-windows configuration
+# Windows Config
 
-see 
+Based off ewow, see, 
 https://github.com/zk-phi/ewow
 
 ## other notes about my windows setup:
@@ -9,3 +8,4 @@ https://github.com/zk-phi/ewow
 use switcheroo:
 https://github.com/kvakulo/Switcheroo
 
+use scoop, cmdr
